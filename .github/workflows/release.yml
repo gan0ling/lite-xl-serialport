@@ -1,0 +1,161 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Release Version
+        default: v1.0
+        required: true
+
+jobs:
+  release:
+    name: Create Release
+    runs-on: ubuntu-18.04
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+      version: ${{ steps.tag.outputs.version }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Fetch Version
+        id: tag
+        run: |
+          if [[ "${{ github.event.inputs.version }}" != "" ]]; then
+            echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "version=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_OUTPUT
+          fi
+      - name: Update Tag
+        uses: richardsimko/update-tag@v1
+        with:
+          tag_name: ${{ steps.tag.outputs.version }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Create Release
+        id: create_release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.tag.outputs.version }}
+          name: "Lite XL Sample ${{ steps.tag.outputs.version }}"
+          draft: true
+          body_path: changelog.md
+          generate_release_notes: true
+
+  build_linux:
+    name: Linux
+    needs: release
+    runs-on: ubuntu-18.04
+    strategy:
+      matrix:
+        arch: [x86_64, i686, aarch64]
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Python Setup
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt -y install ninja-build
+          if [[ "${{ matrix.arch }}" != "x86_64" ]]; then
+            sudo apt -y install gcc-${{ matrix.arch }}-linux-gnu binutils-${{ matrix.arch }}-linux-gnu
+          fi
+          pip3 install meson
+      - name: Build
+        run: |
+          if [[ "${{ matrix.arch }}" != "x86_64" ]]; then
+            meson setup --cross-file crossfiles/linux_${{ matrix.arch }}.conf \
+              --wrap-mode forcefallback -Dprefer_static=true \
+              build
+          else
+            meson setup --wrap-mode forcefallback -Dprefer_static=true build
+          fi
+          meson compile -C build
+          mv build/native.so native.${{ matrix.arch }}-linux.so
+      - name: Upload
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ needs.release.outputs.version }}
+          draft: true
+          files: native.${{ matrix.arch }}-linux.so
+
+  build_mingw:
+    name: Windows
+    needs: release
+    runs-on: ubuntu-18.04
+    strategy:
+      matrix:
+        arch: [x86_64, i686]
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Python Setup
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt -y install ninja-build gcc-mingw-w64
+          pip3 install meson
+      - name: Build
+        run: |
+          meson setup --cross-file crossfiles/mingw_${{ matrix.arch }}.conf \
+            --wrap-mode forcefallback -Dprefer_static=true \
+            build
+          meson compile -C build
+          mv build/native.dll native.${{ matrix.arch }}-windows.dll
+      - name: Upload
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ needs.release.outputs.version }}
+          draft: true
+          files: native.${{ matrix.arch }}-windows.dll
+
+  build_macos:
+    name: macOS
+    needs: release
+    runs-on: macos-11
+    strategy:
+      matrix:
+        arch: [x86_64, aarch64]
+    env:
+      CC: clang
+      CXX: clang++
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Python Setup
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+      - name: Install Dependencies
+        run: |
+          brew install bash ninja
+          pip3 install meson
+      - name: Build
+        run: |
+          if [[ "${{ matrix.arch }}" == "aarch64" ]]; then
+            meson setup --cross-file crossfiles/macos_arm64.conf \
+              --wrap-mode forcefallback -Dprefer_static=true \
+               build
+          else
+            meson setup --wrap-mode forcefallback -Dprefer_static=true build
+          fi
+          meson compile -C build
+          mv build/native.so native.${{ matrix.arch }}-darwin.so
+      - name: Upload
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ needs.release.outputs.version }}
+          draft: true
+          files: native.${{ matrix.arch }}-darwin.so

@@ -1,0 +1,55 @@
+{
+  "addons": [
+    {
+      "id": "sample",
+      "version": "1.0",
+      "type": "plugin",
+      "description": "A sample native plugin that you can use as a skeleton to develop your own.",
+      "mod_version": "3",
+      "files": [
+        {
+          "url": "https://github.com/lite-xl/lite-xl-sample-native-plugin/releases/download/v1.0/native.x86_64-linux.so",
+          "arch": "x86_64-linux",
+          "checksum": "SKIP"
+        },
+        {
+          "url": "https://github.com/lite-xl/lite-xl-sample-native-plugin/releases/download/v1.0/native.i686-linux.so",
+          "arch": "x86-linux",
+          "path": "native.x86-linux.so",
+          "checksum": "SKIP"
+        },
+        {
+          "url": "https://github.com/lite-xl/lite-xl-sample-native-plugin/releases/download/v1.0/native.aarch64-linux.so",
+          "arch": "aarch64-linux",
+          "checksum": "SKIP"
+        },
+        {
+          "url": "https://github.com/lite-xl/lite-xl-sample-native-plugin/releases/download/v1.0/native.x86_64-linux.so",
+          "arch": "x86_64-linux",
+          "checksum": "SKIP"
+        },
+        {
+          "url": "https://github.com/lite-xl/lite-xl-sample-native-plugin/releases/download/v1.0/native.x86_64-darwin.so",
+          "arch": "x86_64-darwin",
+          "checksum": "SKIP"
+        },
+        {
+          "url": "https://github.com/lite-xl/lite-xl-sample-native-plugin/releases/download/v1.0/native.aarch64-darwin.so",
+          "arch": "aarch64-darwin",
+          "checksum": "SKIP"
+        },
+        {
+          "url": "https://github.com/lite-xl/lite-xl-sample-native-plugin/releases/download/v1.0/native.x86_64-windows.dll",
+          "arch": "x86_64-windows",
+          "checksum": "SKIP"
+        },
+        {
+          "url": "https://github.com/lite-xl/lite-xl-sample-native-plugin/releases/download/v1.0/native.i686-windows.dll",
+          "arch": "x86-windows",
+          "path": "native.x86-windows.dll",
+          "checksum": "SKIP"
+        }
+      ]
+    }
+  ]
+}
